@@ -9,7 +9,7 @@ Supported Editor Platforms:
 
 > Linux should work well, but has not been tested.
 >
-> [![Symlinker Preview](https://github.com/UnioGame/Resource.SymLinker/blob/main/GitAssets/symliner1.png)]
+> ![Symlinker Preview](https://github.com/UnioGame/Resource.SymLinker/blob/main/GitAssets/symliner1.png)
 
 ## Install
  
