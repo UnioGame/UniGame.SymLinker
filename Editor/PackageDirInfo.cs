@@ -7,7 +7,7 @@ namespace UniGame.Symlinks.Symlinker.Editor
     [Serializable]
     public class PackageDirInfo
     {
-        public string path;
+        public SymlinkPath path;
         public PackageInfo packageInfo;
     }
 }

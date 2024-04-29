@@ -15,38 +15,13 @@ namespace UniGame.Symlinks.Symlinker.Editor
     [Serializable]
     public class ResourceSymLinker
     {
-        private string _projectPath = string.Empty;
+        private List<SymlinkResourceInfo> _links = new();
         
-        public List<SymlinkResourceInfo> packages = new();
-        public List<SymlinkResourceInfo> folders = new();
+        public SymLinkerAsset ResourceLinker => SymLinkerAsset.instance;
 
-        public SymLinkerAsset SymLinkerData => SymLinkerAsset.instance;
+        public IReadOnlyList<SymlinkResourceInfo> All => ResourceLinker.resources;
 
-        public IReadOnlyList<SymlinkResourceInfo> Packages => packages;
 
-        public IReadOnlyList<SymlinkResourceInfo> Folders => folders;
-
-        public IReadOnlyList<SymlinkResourceInfo> All => SymLinkerData.resources;
-
-        public string ProjectPath {
-            get
-            {
-                if (!string.IsNullOrEmpty(_projectPath))
-                    return _projectPath;
-                
-                var assetsFolderPath = Application.dataPath;
-                assetsFolderPath = FixDirectoryPath(assetsFolderPath);
-                assetsFolderPath = TrimEndDirectorySeparator(assetsFolderPath);
-                
-                var projectFolderPath = assetsFolderPath
-                    .Replace("Assets", string.Empty);
-                
-                _projectPath = projectFolderPath;
-                
-                return _projectPath;
-            }
-        }
-        
         public void EnableAll()
         {
             ReloadLinkedResources();
@@ -58,59 +33,37 @@ namespace UniGame.Symlinks.Symlinker.Editor
             RefreshPackageResources();
         }
 
-        public void ReloadLinkedResources()
+        public bool IsValidLink(SymlinkResourceInfo link)
         {
-            var symLinks = SymLinkerData.resources;
-            packages.Clear();
-            folders.Clear();
-
-            var removedCount = symLinks
-                .RemoveAll(x =>
-                    !Directory.Exists(x.sourcePath) ||
-                    !Directory.Exists(x.destPath));
-
-            var sourceIsChanged = removedCount > 0;
-
-            foreach (var link in symLinks)
-            {
-                var packageData = SelectPackage(link.sourcePath);
-                if (!packageData.found)
-                {
-                    folders.Add(link);
-                    continue;
-                }
-
-                packages.Add(link);
-
-                link.isPackage = true;
-                link.packageLinkInfo = packageData.info;
-                sourceIsChanged = true;
-            }
-
-            RefreshPackageResources();
-
-            if (sourceIsChanged)
-                EditorUtility.SetDirty(SymLinkerData);
+            var sourcePath = link.sourcePath;
+            var destPath = link.destPath;
+            return Directory.Exists(sourcePath.AbsolutePath) &&
+                   Directory.Exists(destPath.AbsolutePath);
         }
 
-        public (PackageDirInfo info, bool found) SelectPackage(string path)
+        public void ReloadLinkedResources()
         {
-            const FileAttributes attrs = FileAttributes.Directory | FileAttributes.ReparsePoint;
-            var srcPackageJsonPath = Path.Combine(path, "package.json");
-            var packageFound = (File.GetAttributes(path) & attrs) == attrs && File.Exists(srcPackageJsonPath);
+            _links.Clear();
 
-            if (!packageFound) return (default, false);
-
-            var packageJsonString = File.ReadAllText(srcPackageJsonPath);
-            var packageInfo = JsonUtility.FromJson<PackageInfo>(packageJsonString);
-
-            var package = new PackageDirInfo
+            foreach (var link in ResourceLinker.resources)
             {
-                path = path,
-                packageInfo = packageInfo
-            };
+                var sourcePath = link.sourcePath;
+                var destPath = link.destPath;
 
-            return (package, true);
+                var isValidLink = IsValidLink(link);
+                if (!isValidLink) continue;
+                
+                UpdatePackageInfo(link);
+                
+                _links.Add(link);
+                
+                continue;
+            }
+
+            ResourceLinker.resources.Clear();
+            ResourceLinker.resources.AddRange(_links);
+            
+            EditorUtility.SetDirty(ResourceLinker);
         }
 
         public void AddSymlinkResource()
@@ -119,10 +72,11 @@ namespace UniGame.Symlinks.Symlinker.Editor
                 .OpenFolderPanel("Select Source Path", string.Empty, string.Empty);
             AddSymlinkResource(srcFolderPath);
         }
-        
+
         public void RestoreSymLinks()
         {
-            foreach (var resource in All)
+            var resources = ResourceLinker.resources.ToList();
+            foreach (var resource in resources)
             {
                 RestoreSymLink(resource);
             }
@@ -130,99 +84,80 @@ namespace UniGame.Symlinks.Symlinker.Editor
 
         public void RestoreSymLink(SymlinkResourceInfo link)
         {
-            var sourcePath = link.isRelative 
-                ? GetRelativePath(link.sourcePath) 
-                : link.sourcePath;
-            var destPath = link.isRelative 
-                ? GetRelativePath(link.destPath) 
-                : link.destPath;
-
-            if (Directory.Exists(sourcePath) && Directory.Exists(destPath)) return;
+            if (IsValidLink(link))return;
             
-            DeleteLinkedFolderAsset(destPath);
-            
-            if (!Directory.Exists(sourcePath)) return;
+            DeleteResourceLink(link);
+            UpdatePackageInfo(link);
             
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-            
-            CreateSymLink(sourcePath, destPath);
+
+            CreateSymLink(link);
         }
 
-        public (SymlinkResourceInfo resource, bool result) CreateSymLink(string srcPath, string dstPath)
+        public bool CreateSymLink(SymlinkResourceInfo info)
         {
-            ReloadLinkedResources();
+            var srcPath = info.sourcePath.AbsolutePath;
+            var destPath = info.destPath.AbsolutePath;
 
+            var link = ResourceLinker.FindResource(srcPath);
+            if (link != null) return false;
+            
             if (!Directory.Exists(srcPath))
             {
                 Debug.LogError($"Source path not found: {srcPath}");
-                return (null, false);
+                return false;
             }
 
-            var filePath = TrimEndDirectorySeparator(dstPath);
+            if (Directory.Exists(destPath))
+            {
+                Debug.LogError($"Dest path already exists {destPath}");
+                return false;
+            }
+
+            var filePath = SymlinkPathTool.TrimEndDirectorySeparator(destPath);
             var dstParent = Path.GetDirectoryName(filePath);
-            if (!Directory.Exists(dstParent) && !string.IsNullOrEmpty(dstParent))
+            if (!string.IsNullOrEmpty(dstParent) && !Directory.Exists(dstParent))
                 Directory.CreateDirectory(dstParent);
 
 #if UNITY_EDITOR_WIN
-            var command = $"mklink /j \"{dstPath}\" \"{srcPath}\"";
+            var command = $"mklink /j \"{destPath}\" \"{srcPath}\"";
 #else
-            var command = $"ln -s {srcPath} {dstPath}";
+            var command = $"ln -s {srcPath} {destPath}";
 #endif
             
-            var isRelative = IsRelativePath(srcPath);
-            if (isRelative)
-            {
-                srcPath = ToRelativePath(srcPath);
-                dstPath = ToRelativePath(dstPath);
-            }
-            
-            var resource = new SymlinkResourceInfo
-            {
-                sourcePath = srcPath,
-                destPath = dstPath,
-                isRelative = isRelative,
-            };
+            UpdatePackageInfo(info);
 
-            if (TryExecuteCmd(command, out _, out var error) != 0)
+            var result = true;
+            var code = TryExecuteCmd(command, out _, out var error);
+            
+            if (code != 0)
             {
                 //on osx return code can be not 0
                 //double check error
-                if (string.IsNullOrEmpty(error)) return (resource, true);
-
-                Debug.LogError($"Failed to link package: {error} src {srcPath} dst {dstPath}");
-                return (null, false);
+                if (string.IsNullOrEmpty(error))
+                {
+                    result = true;
+                }
+                else
+                {
+                    Debug.LogError($"Failed to link package: {error} src {srcPath} dst {destPath}");
+                    result = false;
+                }
             }
-            
-            return (resource, true);
-        }
 
-        public bool IsRelativePath(string path)
-        {
-            return path.Contains(ProjectPath, StringComparison.OrdinalIgnoreCase);
+            if (!result) return false;
+            
+            ResourceLinker.resources.Add(info);
+            
+            if (info.isPackage) Client.Resolve();
+
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+
+            ReloadLinkedResources();
+            
+            return true;
         }
         
-        public string ToRelativePath(string path)
-        {
-            var isRelative = IsRelativePath(path);
-            path = isRelative
-                ? path.Replace(ProjectPath, string.Empty)
-                : path;
-            return path;
-        }
-
-        public string GetRelativePath(string path)
-        {
-            return PathCombine(ProjectPath, path);
-        }
-
-        public bool IsSymLink(string path)
-        {
-            var isAlreadyExists = All.FirstOrDefault(x =>
-                x.sourcePath.Equals(path, StringComparison.OrdinalIgnoreCase) ||
-                x.destPath.Equals(path, StringComparison.OrdinalIgnoreCase));
-            return isAlreadyExists != null;
-        }
-
         private void AddSymlinkResource(string srcFolderPath)
         {
             if (string.IsNullOrEmpty(srcFolderPath))
@@ -231,150 +166,88 @@ namespace UniGame.Symlinks.Symlinker.Editor
                 return;
             }
 
-            srcFolderPath = FixDirectoryPath(srcFolderPath);
+            srcFolderPath = SymlinkPathTool.FixDirectoryPath(srcFolderPath);
 
-            if (IsSymLink(srcFolderPath))
+            var link = ResourceLinker.FindResource(srcFolderPath);
+            
+            if (link!=null)
             {
                 Debug.LogError("Resource already linked");
                 return;
             }
-
-            var packageData = SelectPackage(srcFolderPath);
-            var destFolderPath = GetDestFolderPath(srcFolderPath);
-            destFolderPath = FixDirectoryPath(destFolderPath);
-
-            var symlinkResult = CreateSymLink(srcFolderPath, destFolderPath);
-
-            var symlinkResource = symlinkResult.resource;
-            if (!symlinkResult.result)
+            
+            var destFolderPath = SymlinkPathTool.GetDestFolderPath(srcFolderPath);
+            destFolderPath = SymlinkPathTool.FixDirectoryPath(destFolderPath);
+            link = new SymlinkResourceInfo()
             {
-                Debug.LogError($"Failed to create symlink for {srcFolderPath} to {destFolderPath}");
-                return;
-            }
+                sourcePath = SymlinkPath.Create(srcFolderPath),
+                destPath = SymlinkPath.Create(destFolderPath),
+            };
 
-            if (packageData.found)
-            {
-                symlinkResource.isPackage = true;
-                symlinkResource.packageLinkInfo = packageData.info;
-            }
-
-            SymLinkerData.resources.Add(symlinkResource);
-
-            if (packageData.found) Client.Resolve();
-
-            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-
-            ReloadLinkedResources();
+            CreateSymLink(link);
         }
 
-        public string TrimEndDirectorySeparator(string path)
+        public SymlinkResourceInfo UpdatePackageInfo(SymlinkResourceInfo link)
         {
-            path = path.TrimEnd('/');
-            path = path.TrimEnd('\\');
-            return path;
+            var sourcePath = link.sourcePath.AbsolutePath;
+            var destPath = link.destPath.AbsolutePath;
+            
+            var packageData = SymlinkPathTool.SelectPackage(sourcePath);
+            link.isPackage = packageData.found;
+            
+            if (!packageData.found)
+            {
+                link.packageLinkInfo = default;
+            }
+            else
+            {
+                link.packageLinkInfo.path = SymlinkPath.Create(destPath);
+                link.packageLinkInfo.packageInfo = packageData.info.packageInfo;
+            }
+
+            return link;
         }
         
-        public string TrimStartDirectorySeparator(string path)
-        {
-            path = path.TrimStart('/');
-            path = path.TrimStart('\\');
-            return path;
-        }
-
-        public string FixDirectoryPath(string path)
-        {
-            path = TrimEndDirectorySeparator(path);
-            path += "/";
-            path = path.Replace('/', Path.DirectorySeparatorChar);
-            return path;
-        }
-
-        public string PathCombine(string path1, string path2)
-        {
-            path1 = TrimEndDirectorySeparator(path1);
-            path2 = TrimStartDirectorySeparator(path2);
-            var path = path1 + "/" + path2;
-            path = path.Replace('/', Path.DirectorySeparatorChar);
-            return path;
-        }
-
-        public SymlinkResourceInfo Find(string path)
-        {
-            var resource = All.FirstOrDefault(x =>
-                x.sourcePath.Equals(path, StringComparison.OrdinalIgnoreCase) ||
-                x.destPath.Equals(path, StringComparison.OrdinalIgnoreCase));
-            return resource;
-        }
-
         public void DeleteResourceLink(string path)
         {
-            var resource = Find(path);
+            var resource = ResourceLinker.FindResource(path);
             if (resource == null) return;
             DeleteResourceLink(resource);
         }
 
         public void DeleteResourceLink(SymlinkResourceInfo into)
         {
-            var path = into.destPath;
+            var sourcePath = into.sourcePath;
+            var destPath = into.destPath;
+            var path = destPath.AbsolutePath;
+            var source = sourcePath.AbsolutePath;
 
+            if (Directory.Exists(path))
+            {
 #if UNITY_EDITOR_WIN
-            var command = $"rd \"{path}\"";
+                var command = $"rd \"{path}\"";
 #else
-            var command = $"unlink {path}";
+                var command = $"unlink {path}";
 #endif
 
-            if (TryExecuteCmd(command, out _, out var error) != 0)
-            {
-                //on osx return code can be not 0
-                //double check error
-                if (string.IsNullOrEmpty(error) == false)
+                if (TryExecuteCmd(command, out _, out var error) != 0)
                 {
-                    Debug.LogError($"Failed to delete package link: {error}");
-                    return;
+                    //on osx return code can be not 0
+                    //double check error
+                    if (string.IsNullOrEmpty(error) == false)
+                    {
+                        Debug.LogError($"Failed to delete package link: {error}");
+                    }
                 }
+                
+                SymlinkPathTool.DeleteLinkedFolderAsset(path);
             }
 
-            DeleteLinkedFolderAsset(path);
+            ResourceLinker.Delete(into);
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
 
             ReloadLinkedResources();
-        }
-
-        public void DeleteLinkedFolderAsset(string path)
-        {
-            FileUtil.DeleteFileOrDirectory(path);
-            var metaPath = TrimEndDirectorySeparator(path);
-            metaPath += ".meta";
-            FileUtil.DeleteFileOrDirectory(metaPath);
-        }
-        
-        public string GetDestFolderPath(string srcPath)
-        {
-            srcPath = FixDirectoryPath(srcPath);
-            var srcFile = srcPath.TrimEnd(Path.DirectorySeparatorChar);
-
-            var packageData = SelectPackage(srcPath);
-            var directory = Path.GetFileName(srcFile);
-
-            var defaultTargetPath = packageData.found
-                ? GetPackagesFolderPath()
-                : SymLinkerData.ProjectResourcePath;
-
-            defaultTargetPath = FixDirectoryPath(defaultTargetPath);
-
-            var assetsFolderPath = Application.dataPath;
-            var projectFolderPath = assetsFolderPath;
-            var packageFolderPath = projectFolderPath + $"/{defaultTargetPath}{directory}/";
-            return packageFolderPath.Replace('/', Path.DirectorySeparatorChar);
-        }
-
-        public static string GetPackagesFolderPath()
-        {
-            var assetsFolderPath = Application.dataPath;
-            var projectFolderPath = assetsFolderPath.Substring(0, assetsFolderPath.Length - "/Assets".Length);
-            var packageFolderPath = projectFolderPath + "/Packages";
-            return packageFolderPath.Replace('/', Path.DirectorySeparatorChar);
         }
 
         public static int TryExecuteCmd(string command, out string output, out string error)
@@ -424,11 +297,12 @@ namespace UniGame.Symlinks.Symlinker.Editor
 
         public void RefreshPackageResources()
         {
-            foreach (var resourceInfo in SymLinkerData.resources)
-            {
+            foreach (var resourceInfo in ResourceLinker.resources)
+            {   
                 if (!resourceInfo.isPackage) continue;
-                var path = resourceInfo.sourcePath;
-                var packageJsonPath = Path.Combine(path, "package.json");
+                
+                var path = resourceInfo.sourcePath.AbsolutePath;
+                var packageJsonPath = SymlinkPathTool.GetPackagePath(path);
 
                 if (!File.Exists(packageJsonPath))
                     continue;

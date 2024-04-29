@@ -3,7 +3,7 @@ using System;
 namespace UniGame.Symlinks.Symlinker.Editor
 {
     [Serializable]
-    public class PackageInfo
+    public struct PackageInfo
     {
         public string name;
         public string version;

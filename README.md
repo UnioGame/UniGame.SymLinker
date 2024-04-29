@@ -14,7 +14,7 @@ Supported Editor Platforms:
 
 ## Setup Unity Project link path
 
-![Symlinker Settings](https://github.com/UnioGame/Resource.SymLinker/blob/main/GitAssets/symliner2.jpg)
+![Symlinker Settings](https://github.com/UnioGame/Resource.SymLinker/blob/main/GitAssets/symliner2.png)
 
 ## Install
  

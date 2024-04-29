@@ -20,6 +20,7 @@ namespace UniGame.Symlinks.Symlinker.Editor.Settings
                 {
                     var settings =  new SerializedObject(SymLinkerAsset.instance);
                     EditorGUILayout.PropertyField(settings.FindProperty(nameof(SymLinkerAsset.ProjectResourcePath)), new GUIContent("Project Linked Resources Path"));
+                    EditorGUILayout.PropertyField(settings.FindProperty(nameof(SymLinkerAsset.EnableAutoLink)), new GUIContent("Project Linked Resources Path"));
                 },
 
                 // Populate the search keywords to enable smart search filtering and label highlighting:

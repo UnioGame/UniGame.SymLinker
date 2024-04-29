@@ -68,7 +68,7 @@ namespace UniGame.Symlinks.Symlinker.Editor
             labelStyle.richText = true;
 
             resources.Clear();
-            resources.AddRange(symLinker.SymLinkerData.resources);
+            resources.AddRange(symLinker.ResourceLinker.resources);
             
             if (resources.Count == 0)
             {
@@ -89,35 +89,38 @@ namespace UniGame.Symlinks.Symlinker.Editor
             {
                 GUILayout.BeginVertical(EditorStyles.helpBox);
 
-                if (GUILayout.Button("Restore ALL Links"))
-                {
-                    symLinker.RestoreSymLinks();
-                }
-
-                var destFilePath = symLinker.TrimEndDirectorySeparator(symLink.destPath);
+                var destFilePath = symLink.destPath.Path;
                 var isPackage = symLink.isPackage;
                 var packageLink = symLink.packageLinkInfo;
+                
                 var label = isPackage
                     ? $"{packageLink.packageInfo.name} : <i>{packageLink.packageInfo.version}</i>"
                     : Path.GetFileNameWithoutExtension(destFilePath);
                 
                 GUILayout.BeginHorizontal();
+                
                 GUILayout.Label(label, labelStyle);
                 
                 if (GUILayout.Button("Delete link", GUILayout.Width(120)))
                 {
                     symLinker.DeleteResourceLink(symLink);
                 }
-                if (GUILayout.Button("Restore link", GUILayout.Width(120)))
+                if (GUILayout.Button("Ping", GUILayout.Width(120)))
                 {
-                    symLinker.DeleteResourceLink(symLink);
+                    var targetPath = SymlinkPathTool.TrimEndDirectorySeparator(destFilePath);
+                    var asset = AssetDatabase.LoadAssetAtPath<Object>(targetPath);
+                    if (asset != null)
+                    {
+                        Selection.activeObject = null;
+                        Selection.activeObject = asset;
+                    }
                 }
 
                 GUILayout.EndHorizontal();
 
-                GUILayout.Label($"{nameof(symLink.isRelative)} : {symLink.isRelative}", EditorStyles.miniLabel);
                 GUILayout.Label($"{nameof(symLink.isPackage)} : {symLink.isPackage}", EditorStyles.miniLabel);
-                GUILayout.Label(symLink.destPath, EditorStyles.miniLabel);
+                GUILayout.Label($"from: {symLink.sourcePath.Path}", EditorStyles.miniLabel);
+                GUILayout.Label($"to: {symLink.destPath.Path}", EditorStyles.miniLabel);
 
                 GUILayout.EndVertical();
             }
