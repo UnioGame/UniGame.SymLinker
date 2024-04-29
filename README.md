@@ -10,6 +10,11 @@ Supported Editor Platforms:
 > Linux should work well, but has not been tested.
 >
 > [![Symlinker Preview](https://github.com/UnioGame/Resource.SymLinker/blob/main/GitAssets/symliner1.png)]
+> 
+
+## Setup Unity Project link path
+
+[![Symlinker Settings](https://github.com/UnioGame/Resource.SymLinker/blob/main/GitAssets/symliner2.jpg)]
 
 ## Install
  
