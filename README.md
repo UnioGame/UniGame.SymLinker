@@ -2,6 +2,10 @@
 
 Tool for maintaining symbolic linked resources for Unity
 
+## Demo
+
+![Demo](https://github.com/UnioGame/UniGame.SymLinker/blob/main/GitAssets/unigame.symlinker_gif.gif)
+
 Supported Editor Platforms:
 * Windows
 * MacOS
@@ -15,11 +19,6 @@ Supported Editor Platforms:
 ## Setup Unity Project link path
 
 ![Symlinker Settings](https://github.com/UnioGame/Resource.SymLinker/blob/main/GitAssets/symliner2.png)
-
-
-## Demo
-
-![Demo](https://github.com/UnioGame/UniGame.SymLinker/blob/main/GitAssets/unigame.symlinker_gif.gif)
 
 ## Install
  
