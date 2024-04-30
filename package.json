@@ -1,10 +1,11 @@
 {
   "name": "com.unigame.symlinker",
-  "displayName": "Resource Symlinker",
+  "displayName": "UniGame Resource Symlinker",
   "description": "Tool for maintaining symbolic linked resources for Unity",
   "version": "2024.0.0",
   "unity": "2019.1",
-  "license": "MIT",
+  "license": "MIT", 
+  "homepage": "https://github.com/UnioGame/UniGame.SymLinker#readme",  
   "author": "UniGame (https://github.com/UnioGame)",
   "dependencies": {
       "com.unity.nuget.newtonsoft-json": "3.2.1"
