@@ -16,6 +16,11 @@ Supported Editor Platforms:
 
 ![Symlinker Settings](https://github.com/UnioGame/Resource.SymLinker/blob/main/GitAssets/symliner2.png)
 
+
+## Demo
+
+![Symlinker Settings](https://github.com/UnioGame/Resource.SymLinker/blob/main/GitAssets/unigame.symlinker_gif)
+
 ## Install
  
 ```
