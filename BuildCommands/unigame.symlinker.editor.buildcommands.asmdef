@@ -1,0 +1,27 @@
+{
+    "name": "unigame.symlinker.editor.buildcommands",
+    "rootNamespace": "",
+    "references": [
+        "GUID:f0321ba97c62c974b82a7fc7c1d544f9",
+        "GUID:cb263b0dd32197a4fa5d89d6364e23d6"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+      "UNI_BUILD"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unigame.unibuildpipeline",
+            "expression": "2024.0.0",
+            "define": "UNI_BUILD"
+        }
+    ],
+    "noEngineReferences": false
+}

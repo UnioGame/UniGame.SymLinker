@@ -33,6 +33,26 @@ namespace UniGame.Symlinks.Symlinker.Editor
             RefreshPackageResources();
         }
 
+        public SymlinkResourceInfo Find(string path)
+        {
+            return ResourceLinker.FindResource(path);
+        }
+
+        public SymlinkResourceInfo CreateLink(string sourcePath)
+        {
+            var destPath = SymlinkPathTool.GetDestFolderPath(sourcePath);
+            
+            var symLink = new SymlinkResourceInfo()
+            {
+                sourcePath = SymlinkPath.Create(sourcePath),
+                destPath = SymlinkPath.Create(destPath),
+            };
+
+            UpdatePackageInfo(symLink);
+
+            return symLink;
+        }
+
         public bool IsValidLink(SymlinkResourceInfo link)
         {
             var sourcePath = link.sourcePath;
