@@ -19,7 +19,7 @@ Supported Editor Platforms:
 ## Install
  
 ```
-"com.unigame.symlinker" : "https://github.com/UnioGame/Resource.SymLinker.git"
+"com.unigame.symlinker" : "https://github.com/UnioGame/UniGame.SymLinker.git"
 ```
  
 ## License
