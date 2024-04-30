@@ -67,6 +67,8 @@ namespace UniGame.Symlinks.Symlinker.Editor
             var labelStyle = EditorStyles.boldLabel;
             labelStyle.richText = true;
 
+            var linkedResourceStyle = EditorStyles.selectionRect;
+
             resources.Clear();
             resources.AddRange(symLinker.ResourceLinker.resources);
             
@@ -85,9 +87,21 @@ namespace UniGame.Symlinks.Symlinker.Editor
 
             GUILayout.Label("Linked packages", EditorStyles.largeLabel);
 
+            if (GUILayout.Button("Reload"))
+            {
+                symLinker.ReloadLinkedResources();
+            }
+            
             foreach (var symLink in resources)
             {
-                GUILayout.BeginVertical(EditorStyles.helpBox);
+                if (symLink.isLinked)
+                {
+                    GUILayout.BeginVertical(linkedResourceStyle);
+                }
+                else
+                {
+                    GUILayout.BeginVertical(EditorStyles.helpBox);
+                }
 
                 var destFilePath = symLink.destPath.Path;
                 var isPackage = symLink.isPackage;
@@ -101,7 +115,16 @@ namespace UniGame.Symlinks.Symlinker.Editor
                 
                 GUILayout.Label(label, labelStyle);
                 
-                if (GUILayout.Button("Delete link", GUILayout.Width(120)))
+                var actionLabel = symLink.isLinked ? "Unlink" : "Link";
+                
+                if (GUILayout.Button(actionLabel, GUILayout.Width(120)))
+                {
+                    if (symLink.isLinked)
+                        symLinker.UnlinkResource(symLink);
+                    else
+                        symLinker.RestoreSymLink(symLink);
+                }
+                if (GUILayout.Button("Delete", GUILayout.Width(120)))
                 {
                     symLinker.DeleteResourceLink(symLink);
                 }

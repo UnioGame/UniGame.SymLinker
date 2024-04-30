@@ -15,6 +15,15 @@ namespace UniGame.Symlinks.Symlinker.Editor
         public bool EnableAutoLink = true;
         
         public List<SymlinkResourceInfo> resources = new();
+
+        public bool Add(SymlinkResourceInfo link)
+        {
+            var exists = FindResource(link.destPath.AbsolutePath) != null;
+            if (exists) return false;
+            
+            resources.Add(link);
+            return true;
+        }
         
         public void Delete(string path)
         {

@@ -15,7 +15,7 @@ namespace UniGame.Symlinks.Symlinker.Editor
         
         [Unity.Plastic.Newtonsoft.Json.JsonIgnore]
         [JsonIgnore]
-        public string AbsolutePath => isRelative ? path : SymlinkPathTool.GetAbsolutePath(path);
+        public string AbsolutePath => SymlinkPathTool.GetAbsolutePath(path);
 
         public static SymlinkPath Create(string targetPath)
         {
