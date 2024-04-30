@@ -19,7 +19,7 @@ Supported Editor Platforms:
 
 ## Demo
 
-![Symlinker Settings](https://github.com/UnioGame/Resource.SymLinker/blob/main/GitAssets/unigame.symlinker_gif)
+![Demo](https://github.com/UnioGame/UniGame.SymLinker/blob/main/GitAssets/unigame.symlinker_gif.gif)
 
 ## Install
  
