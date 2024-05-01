@@ -7,8 +7,11 @@ namespace UniGame.Symlinks.Symlinker.Editor
 {
     public static class SymlinkPathTool
     {
+        public const string PackageJson = "package.json";
+        public const string PackageFolderJson = "Packages";
         
         private static string _projectPath = string.Empty;
+        
         
         public static string ProjectPath {
             get
@@ -37,14 +40,20 @@ namespace UniGame.Symlinks.Symlinker.Editor
             return path;
         }
         
+        public static bool IsPackagePath(string path)
+        {
+            var srcPackageJsonPath = Path.Combine(path,PackageJson);
+            var packageFound = File.Exists(srcPackageJsonPath);
+            return packageFound;
+        }
+        
         public static (PackageDirInfo info, bool found) SelectPackage(string path)
         {
-            const FileAttributes attrs = FileAttributes.Directory | FileAttributes.ReparsePoint;
-            var srcPackageJsonPath = Path.Combine(path, "package.json");
-            var packageFound = (File.GetAttributes(path) & attrs) == attrs && File.Exists(srcPackageJsonPath);
+            var packageFound = IsPackagePath(path);
 
             if (!packageFound) return (default, false);
 
+            var srcPackageJsonPath = Path.Combine(path,PackageJson);
             var packageJsonString = File.ReadAllText(srcPackageJsonPath);
             var packageInfo = JsonUtility.FromJson<PackageInfo>(packageJsonString);
 
@@ -62,19 +71,18 @@ namespace UniGame.Symlinks.Symlinker.Editor
             srcPath = FixDirectoryPath(srcPath);
             var srcFile = srcPath.TrimEnd(Path.DirectorySeparatorChar);
 
-            var packageData = SelectPackage(srcPath);
+            var isPackage = IsPackagePath(srcPath);
             var directory = Path.GetFileName(srcFile);
 
-            var defaultTargetPath = packageData.found
+            var defaultTargetPath = isPackage
                 ? GetPackagesFolderPath()
-                : SymLinkerAsset.instance.ProjectResourcePath;
-
+                : PathCombine(Application.dataPath,SymLinkerAsset.instance.ProjectResourcePath);
+            
             defaultTargetPath = FixDirectoryPath(defaultTargetPath);
-
-            var assetsFolderPath = Application.dataPath;
-            var projectFolderPath = assetsFolderPath;
-            var packageFolderPath = projectFolderPath + $"/{defaultTargetPath}{directory}/";
-            return packageFolderPath.Replace('/', Path.DirectorySeparatorChar);
+            defaultTargetPath = TrimEndDirectorySeparator(defaultTargetPath);
+            
+            var resultPath = defaultTargetPath + $"/{directory}/";
+            return FixDirectoryPath(resultPath);
         }
         
         public static string GetRelativePath(string path)
@@ -99,12 +107,12 @@ namespace UniGame.Symlinks.Symlinker.Editor
             return path;
         }
         
-        public static void DeleteLinkedFolderAsset(string path)
+        public static void DeleteFolderWithMeta(string path)
         {
-            FileUtil.DeleteFileOrDirectory(path);
+            var folderDeleted = FileUtil.DeleteFileOrDirectory(path);
             var metaPath = TrimEndDirectorySeparator(path);
             metaPath += ".meta";
-            FileUtil.DeleteFileOrDirectory(metaPath);
+            var metaDeleted = FileUtil.DeleteFileOrDirectory(metaPath);
         }
         
         public static string TrimEndDirectorySeparator(string path)
@@ -123,14 +131,13 @@ namespace UniGame.Symlinks.Symlinker.Editor
 
         public static string GetPackagePath(string path)
         {
-            return PathCombine(path, "package.json");
+            var packagePath = Path.Combine(path,PackageJson);
+            return packagePath;
         }
         
         public static string GetPackagesFolderPath()
         {
-            var assetsFolderPath = Application.dataPath;
-            var projectFolderPath = assetsFolderPath.Substring(0, assetsFolderPath.Length - "/Assets".Length);
-            var packageFolderPath = projectFolderPath + "/Packages";
+            var packageFolderPath = ProjectPath + "/" + $"{PackageFolderJson}/";
             return packageFolderPath.Replace('/', Path.DirectorySeparatorChar);
         }
         

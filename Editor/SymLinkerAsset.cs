@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace UniGame.Symlinks.Symlinker.Editor
 {
-    [FilePath("UniGame/ResourceSymlinker/SymlinkerAsset.asset", FilePathAttribute.Location.PreferencesFolder)]
+    [FilePath("ProjectSettings/UniGame/SymLinker/SymLinker.Data.asset", FilePathAttribute.Location.ProjectFolder)]
     public class SymLinkerAsset : ScriptableSingleton<SymLinkerAsset>
     {
         [Tooltip("Path to linked resources in project")]
@@ -22,19 +22,23 @@ namespace UniGame.Symlinks.Symlinker.Editor
             if (exists) return false;
             
             resources.Add(link);
+            
+            Save(true);
             return true;
         }
         
-        public void Delete(string path)
+        public bool Delete(string path)
         {
             var link = FindResource(path);
-            if (link != null)
-                resources.Remove(link);
+            return link != null && Delete(link);
         }
         
-        public void Delete(SymlinkResourceInfo link)
+        public bool Delete(SymlinkResourceInfo link)
         {
-            resources.Remove(link);
+            var result = resources.Remove(link);
+            if (!result) return false;
+            Save(true);
+            return true;
         }
         
         public SymlinkResourceInfo FindResource(string path)

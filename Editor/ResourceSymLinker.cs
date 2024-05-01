@@ -101,8 +101,8 @@ namespace UniGame.Symlinks.Symlinker.Editor
         {
             if (IsValidLink(link))return;
             
-            DeleteResourceLink(link);
             UpdatePackageInfo(link);
+            DeleteResourceLink(link);
             
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
 
@@ -254,7 +254,7 @@ namespace UniGame.Symlinks.Symlinker.Editor
                     }
                 }
                 
-                SymlinkPathTool.DeleteLinkedFolderAsset(path);
+                SymlinkPathTool.DeleteFolderWithMeta(path);
             }
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
@@ -262,10 +262,10 @@ namespace UniGame.Symlinks.Symlinker.Editor
             ReloadLinkedResources();
         }
         
-        public void DeleteResourceLink(SymlinkResourceInfo into)
+        public void DeleteResourceLink(SymlinkResourceInfo link)
         {
-            var sourcePath = into.sourcePath;
-            var destPath = into.destPath;
+            var sourcePath = link.sourcePath;
+            var destPath = link.destPath;
             var path = destPath.AbsolutePath;
             var source = sourcePath.AbsolutePath;
 
@@ -286,11 +286,17 @@ namespace UniGame.Symlinks.Symlinker.Editor
                         Debug.LogError($"Failed to delete package link: {error}");
                     }
                 }
-                
-                SymlinkPathTool.DeleteLinkedFolderAsset(path);
             }
+            
+            SymlinkPathTool.DeleteFolderWithMeta(path);
+            
+            ResourceLinker.Delete(link);
 
-            ResourceLinker.Delete(into);
+            if (link.isPackage)
+            {
+                Client.Remove(link.packageLinkInfo.packageInfo.name);
+                Client.Resolve();
+            }
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
 
