@@ -91,8 +91,6 @@ namespace UniGame.Symlinks.Symlinker.Editor
         {
             if (IsValidLink(link))return;
             
-            DeleteResourceLink(link);
-            
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
 
             CreateSymLink(link);
