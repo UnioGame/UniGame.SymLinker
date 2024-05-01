@@ -19,18 +19,6 @@ namespace UniGame.Symlinks.Symlinker.Editor
 
         public IReadOnlyList<SymlinkResourceInfo> All => ResourceLinker.resources;
 
-
-        public void EnableAll()
-        {
-            ReloadLinkedResources();
-            RefreshPackageResources();
-        }
-
-        public void Refresh()
-        {
-            RefreshPackageResources();
-        }
-
         public SymlinkResourceInfo Find(string path)
         {
             return ResourceLinker.FindResource(path);
@@ -51,26 +39,6 @@ namespace UniGame.Symlinks.Symlinker.Editor
             return symLink;
         }
 
-        public bool IsValidLink(SymlinkResourceInfo link)
-        {
-            var sourcePath = link.sourcePath;
-            var destPath = link.destPath;
-            return Directory.Exists(sourcePath.AbsolutePath) &&
-                   Directory.Exists(destPath.AbsolutePath);
-        }
-
-        public void ReloadLinkedResources()
-        {
-            foreach (var link in ResourceLinker.resources)
-            {
-                var isValidLink = IsValidLink(link);
-                link.isLinked = isValidLink;
-                UpdatePackageInfo(link);
-            }
-            
-            ResourceLinker.Save();
-        }
-
         public void AddSymlinkResource()
         {
             var srcFolderPath = EditorUtility
@@ -82,30 +50,38 @@ namespace UniGame.Symlinks.Symlinker.Editor
         {
             var resources = ResourceLinker.resources.ToList();
             foreach (var resource in resources)
-            {
                 RestoreSymLink(resource);
-            }
+            
+            ResourceLinker.Save();
         }
 
         public void RestoreSymLink(SymlinkResourceInfo link)
         {
-            if (IsValidLink(link))return;
+            UpdatePackageInfo(link);
             
-            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-
-            CreateSymLink(link);
+            switch (link.isLinked)
+            {
+                case true when ResourceLinker.IsValidLink(link):
+                    return;
+                case false:
+                    UnlinkResource(link);
+                    break;
+                case true:
+                    CreateSymLink(link);
+                    break;
+            }
         }
 
         public bool CreateSymLink(SymlinkResourceInfo info)
         {
             UpdatePackageInfo(info);
             
+            info.isLinked = ResourceLinker.IsValidLink(info);
+            if(info.isLinked) return false;
+            
             var srcPath = info.sourcePath.AbsolutePath;
             var destPath = info.destPath.AbsolutePath;
 
-            var link = ResourceLinker.FindResource(srcPath);
-            if (link != null) return false;
-            
             if (!Directory.Exists(srcPath))
             {
                 Debug.LogError($"Source path not found: {srcPath}");
@@ -147,15 +123,15 @@ namespace UniGame.Symlinks.Symlinker.Editor
                 }
             }
 
-            if (!result) return false;
-            
+            info.isLinked = ResourceLinker.IsValidLink(info);
             ResourceLinker.Add(info);
+            ReloadLinkedResources();
+            
+            if (!result) return false;
             
             if (info.isPackage) Client.Resolve();
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-
-            ReloadLinkedResources();
             
             return true;
         }
@@ -216,43 +192,8 @@ namespace UniGame.Symlinks.Symlinker.Editor
             DeleteResourceLink(resource);
         }
 
-        public void UnlinkResource(SymlinkResourceInfo into)
+        public void UnlinkResource(SymlinkResourceInfo link)
         {
-            var sourcePath = into.sourcePath;
-            var destPath = into.destPath;
-            var path = destPath.AbsolutePath;
-            var source = sourcePath.AbsolutePath;
-
-            if (Directory.Exists(path))
-            {
-#if UNITY_EDITOR_WIN
-                var command = $"rd \"{path}\"";
-#else
-                var command = $"unlink {path}";
-#endif
-
-                if (TryExecuteCmd(command, out _, out var error) != 0)
-                {
-                    //on osx return code can be not 0
-                    //double check error
-                    if (string.IsNullOrEmpty(error) == false)
-                    {
-                        Debug.LogError($"Failed to delete package link: {error}");
-                    }
-                }
-                
-                SymlinkPathTool.DeleteFolderWithMeta(path);
-            }
-
-            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-
-            ReloadLinkedResources();
-        }
-        
-        public void DeleteResourceLink(SymlinkResourceInfo link)
-        {
-            UpdatePackageInfo(link);
-            
             var sourcePath = link.sourcePath;
             var destPath = link.destPath;
             var path = destPath.AbsolutePath;
@@ -276,18 +217,35 @@ namespace UniGame.Symlinks.Symlinker.Editor
                     }
                 }
             }
-            
+
             SymlinkPathTool.DeleteFolderWithMeta(path);
             
-            ResourceLinker.Delete(link);
-
             if (link.isPackage)
             {
                 Client.Remove(link.packageLinkInfo.packageInfo.name);
                 Client.Resolve();
             }
-
+            
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+
+            ReloadLinkedResources();
+        }
+
+        public void ReloadLinkedResources()
+        {
+            foreach (var link in ResourceLinker.resources)
+            {
+                link.isLinked = ResourceLinker.IsValidLink(link);
+                UpdatePackageInfo(link);
+            }
+        }
+        
+        public void DeleteResourceLink(SymlinkResourceInfo link)
+        {
+            UnlinkResource(link);
+
+            ResourceLinker.Delete(link);
+            ResourceLinker.Save();
 
             ReloadLinkedResources();
         }

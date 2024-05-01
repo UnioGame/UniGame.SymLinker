@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -30,6 +31,22 @@ namespace UniGame.Symlinks.Symlinker.Editor
             
             Save(true);
             return true;
+        }
+
+        public bool CanBeLinked(SymlinkResourceInfo link)
+        {
+            var sourcePath = link.sourcePath;
+            var destPath = link.destPath;
+            return Directory.Exists(sourcePath.AbsolutePath) &&
+                   !Directory.Exists(destPath.AbsolutePath);
+        }
+        
+        public bool IsValidLink(SymlinkResourceInfo link)
+        {
+            var sourcePath = link.sourcePath;
+            var destPath = link.destPath;
+            return Directory.Exists(sourcePath.AbsolutePath) &&
+                   Directory.Exists(destPath.AbsolutePath);
         }
         
         public bool Delete(string path)

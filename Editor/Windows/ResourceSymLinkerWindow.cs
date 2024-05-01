@@ -134,7 +134,7 @@ namespace UniGame.Symlinks.Symlinker.Editor
                                     if (symLink.isLinked)
                                         symLinker.UnlinkResource(symLink);
                                     else
-                                        symLinker.RestoreSymLink(symLink);
+                                        symLinker.CreateSymLink(symLink);
                                 }
 
                                 if (GUILayout.Button("Delete", GUILayout.Width(100)))
