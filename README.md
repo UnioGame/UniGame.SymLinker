@@ -6,7 +6,7 @@ Tool for maintaining symbolic linked resources for Unity
 
 ![Demo](https://github.com/UnioGame/UniGame.SymLinker/blob/main/GitAssets/unigame.symlinker_gif.gif)
 
-## Package Asset Demo
+## Package Usage Demo
 
 ![Demo](https://github.com/UnioGame/UniGame.SymLinker/blob/main/GitAssets/unigame.symlinker.package_gif.gif)
 
