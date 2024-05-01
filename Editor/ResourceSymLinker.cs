@@ -15,8 +15,6 @@ namespace UniGame.Symlinks.Symlinker.Editor
     [Serializable]
     public class ResourceSymLinker
     {
-        private List<SymlinkResourceInfo> _links = new();
-        
         public SymLinkerAsset ResourceLinker => SymLinkerAsset.instance;
 
         public IReadOnlyList<SymlinkResourceInfo> All => ResourceLinker.resources;
@@ -63,22 +61,14 @@ namespace UniGame.Symlinks.Symlinker.Editor
 
         public void ReloadLinkedResources()
         {
-            _links.Clear();
-
             foreach (var link in ResourceLinker.resources)
             {
                 var isValidLink = IsValidLink(link);
                 link.isLinked = isValidLink;
-                
                 UpdatePackageInfo(link);
-                
-                _links.Add(link);
             }
-
-            ResourceLinker.resources.Clear();
-            ResourceLinker.resources.AddRange(_links);
             
-            EditorUtility.SetDirty(ResourceLinker);
+            ResourceLinker.Save();
         }
 
         public void AddSymlinkResource()
@@ -101,7 +91,6 @@ namespace UniGame.Symlinks.Symlinker.Editor
         {
             if (IsValidLink(link))return;
             
-            UpdatePackageInfo(link);
             DeleteResourceLink(link);
             
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
@@ -264,6 +253,8 @@ namespace UniGame.Symlinks.Symlinker.Editor
         
         public void DeleteResourceLink(SymlinkResourceInfo link)
         {
+            UpdatePackageInfo(link);
+            
             var sourcePath = link.sourcePath;
             var destPath = link.destPath;
             var path = destPath.AbsolutePath;

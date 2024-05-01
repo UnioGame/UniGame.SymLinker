@@ -16,6 +16,11 @@ namespace UniGame.Symlinks.Symlinker.Editor
         
         public List<SymlinkResourceInfo> resources = new();
 
+        public void Save()
+        {
+            Save(true);
+        }
+        
         public bool Add(SymlinkResourceInfo link)
         {
             var exists = FindResource(link.destPath.AbsolutePath) != null;
