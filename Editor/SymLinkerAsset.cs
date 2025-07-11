@@ -4,7 +4,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace UniGame.Symlinks.Symlinker.Editor
+namespace UniGame.Symlinks.Editor
 {
     [FilePath("ProjectSettings/UniGame/SymLinker/SymLinker.Data.asset", FilePathAttribute.Location.ProjectFolder)]
     public class SymLinkerAsset : ScriptableSingleton<SymLinkerAsset>

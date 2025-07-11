@@ -1,8 +1,7 @@
-﻿using UniGame.Symlinks.Symlinker.Editor;
-using UniGame.UniBuild.Editor.ClientBuild.Interfaces;
-using UniModules.UniGame.UniBuild.Editor.ClientBuild.Commands.PreBuildCommands;
+﻿using UniGame.Symlinks.Editor;
+using UniGame.UniBuild.Editor;
 
-namespace Game.Modules.UniGame.SymLinker.BuildCommands
+namespace UniGame.SymLinker.BuildCommands
 {
     using System;
 

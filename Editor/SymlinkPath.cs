@@ -1,7 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
 
-namespace UniGame.Symlinks.Symlinker.Editor
+namespace UniGame.Symlinks.Editor
 {
     [Serializable]
     public struct SymlinkPath

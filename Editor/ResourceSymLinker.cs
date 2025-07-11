@@ -10,7 +10,7 @@ using UnityEditor.PackageManager;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace UniGame.Symlinks.Symlinker.Editor
+namespace UniGame.Symlinks.Editor
 {
     [Serializable]
     public class ResourceSymLinker

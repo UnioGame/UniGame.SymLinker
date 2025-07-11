@@ -3,7 +3,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace UniGame.Symlinks.Symlinker.Editor
+namespace UniGame.Symlinks.Editor
 {
     public static class SymlinkPathTool
     {

@@ -1,6 +1,6 @@
 ﻿using UnityEditor;
 
-namespace UniGame.Symlinks.Symlinker.Editor
+namespace UniGame.Symlinks.Editor
 {
     public static class ResourceSymLinkerInitializer
     {

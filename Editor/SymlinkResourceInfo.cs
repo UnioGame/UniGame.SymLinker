@@ -1,6 +1,6 @@
 using System;
 
-namespace UniGame.Symlinks.Symlinker.Editor
+namespace UniGame.Symlinks.Editor
 {
     [Serializable]
     public class SymlinkResourceInfo

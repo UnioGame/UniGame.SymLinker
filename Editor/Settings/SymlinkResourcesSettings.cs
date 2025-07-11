@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace UniGame.Symlinks.Symlinker.Editor.Settings
+namespace UniGame.Symlinks.Editor.Settings
 {
     public static class SymlinkResourcesSettings
     {
